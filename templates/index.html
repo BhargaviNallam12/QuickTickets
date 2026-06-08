@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>QuickTickets</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<!-- NAVBAR -->
+<nav>
+    <h1>QuickTickets</h1>
+
+    <form method="POST" class="search-box" id="searchForm">
+        <span class="search-icon">🔍</span>
+        <input type="text" name="search" id="searchInput" placeholder="Search movies..." autocomplete="off">
+
+        <!-- ✅ suggestions moved INSIDE -->
+        <div id="suggestions" class="suggestions"></div>
+    </form>
+
+    <div>
+        <button onclick="toggleDark()">🌙</button>
+        <a href="/history">My Bookings</a>
+        <a href="/logout">Logout</a>
+    </div>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+    <h2>Welcome to QuickTickets 🎬</h2>
+    <p>Book Movies Easily & Quickly</p>
+</section>
+
+<!-- SLIDER -->
+<div class="slider">
+    <img id="banner" class="fade"
+         src="{{ url_for('static', filename='images/rrr.png') }}">
+
+    <button class="prev" onclick="prevSlide()">❮</button>
+    <button class="next" onclick="nextSlide()">❯</button>
+
+    <div class="dots">
+        <span onclick="goSlide(0)"></span>
+        <span onclick="goSlide(1)"></span>
+        <span onclick="goSlide(2)"></span>
+        <span onclick="goSlide(3)"></span>
+    </div>
+</div>
+
+<!-- ❗ NO RESULT -->
+{% if no_result %}
+    <h2 style="text-align:center; margin-top:20px;">
+        No movies found ❌
+    </h2>
+{% endif %}
+
+<!-- MOVIES -->
+<div class="movie-container">
+    {% for movie in movies %}
+        <div class="movie-card {% if search and search in movie[0].lower() %}highlight{% endif %}">
+            
+            <img src="{{ url_for('static', filename='images/' + movie[1]) }}">
+            <h3>{{ movie[0] }}</h3>
+
+            <p class="rating">
+                ⭐ {{ (7 + loop.index0 % 3) }}.{{ loop.index0 % 10 }}/10
+            </p>
+
+            <a href="/book/{{ movie[0] }}">
+                <button class="book-btn">Book Now</button>
+            </a>
+        </div>
+    {% endfor %}
+</div>
+
+<footer>
+    <p>© 2026 QuickTickets</p>
+</footer>
+
+<!-- SLIDER -->
+<script>
+let banners = [
+    "{{ url_for('static', filename='images/rrr.png') }}",
+    "{{ url_for('static', filename='images/kgf.png') }}",
+    "{{ url_for('static', filename='images/pushpa.png') }}",
+    "{{ url_for('static', filename='images/bahubali.png') }}"
+];
+
+let i = 0;
+
+function showSlide(index){
+    let img = document.getElementById("banner");
+    img.style.opacity = 0;
+
+    setTimeout(()=>{
+        img.src = banners[index];
+        img.style.opacity = 1;
+    },200);
+}
+
+function nextSlide(){
+    i = (i + 1) % banners.length;
+    showSlide(i);
+}
+
+function prevSlide(){
+    i = (i - 1 + banners.length) % banners.length;
+    showSlide(i);
+}
+
+function goSlide(index){
+    i = index;
+    showSlide(i);
+}
+
+setInterval(nextSlide, 3000);
+window.onload = () => showSlide(0);
+</script>
+
+<!-- DARK MODE -->
+<script>
+function toggleDark(){
+    document.body.classList.toggle("dark");
+}
+</script>
+
+<!-- 🔍 AUTO SUGGEST (FIXED) -->
+<script>
+let movies = {{ all_movies | map(attribute=0) | list | tojson }};
+
+document.getElementById("searchInput").addEventListener("input", function(){
+    let value = this.value.toLowerCase();
+    let box = document.getElementById("suggestions");
+
+    box.innerHTML = "";
+
+    if(value === "") return;
+
+    let filtered = movies.filter(m => m.toLowerCase().includes(value));
+
+    if(filtered.length === 0){
+        box.innerHTML = "<div class='no-result'>No results found ❌</div>";
+        return;
+    }
+
+    filtered.forEach(m => {
+        let div = document.createElement("div");
+        div.innerText = m;
+
+        div.onclick = () => {
+            document.getElementById("searchInput").value = m;
+            box.innerHTML = "";
+
+            // ✅ AUTO SUBMIT FORM
+            document.getElementById("searchForm").submit();
+        };
+
+        box.appendChild(div);
+    });
+});
+</script>
+
+</body>
+</html>
