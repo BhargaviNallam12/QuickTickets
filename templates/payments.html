@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Payment</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<nav>
+    <h1>QuickTickets</h1>
+    <a href="/">Home</a>
+</nav>
+
+<div class="payment-box">
+
+    <h2>💳 Payment</h2>
+
+    <p>Total Amount: <b>₹{{ total }}</b></p>
+
+    <!-- CARD FORM -->
+    <div class="card-form">
+        <input type="text" id="card" placeholder="Card Number" maxlength="16">
+        <input type="text" id="name" placeholder="Card Holder Name">
+
+        <div class="row">
+            <input type="text" id="expiry" placeholder="MM/YY">
+            <input type="password" id="cvv" placeholder="CVV" maxlength="3">
+        </div>
+    </div>
+    <div class="upi-box">
+    <input type="text" id="upi" placeholder="Enter UPI ID (example@upi)">
+    </div>
+
+    <!-- UPI OPTION -->
+    <button class="upi-btn" onclick="upiPay()">📱 Pay with UPI</button>
+
+    <!-- PAY BUTTON -->
+    <button class="pay-btn" onclick="pay()">💳 Pay Now</button>
+
+    <!-- LOADER -->
+    <div id="loader" class="loader" style="display:none; margin-top:20px; text-align:center;">
+        <p>Processing Payment ⏳...</p>
+    </div>
+
+</div>
+
+<script>
+
+// 💳 CARD PAYMENT
+function pay(){
+
+    let card = document.getElementById("card").value.trim();
+    let name = document.getElementById("name").value.trim();
+    let expiry = document.getElementById("expiry").value.trim();
+    let cvv = document.getElementById("cvv").value.trim();
+
+    // VALIDATION
+    if(card === "" || name === "" || expiry === "" || cvv === ""){
+        alert("Please fill all details ❌");
+        return;
+    }
+
+    if(card.length < 12){
+        alert("Invalid Card Number ❌");
+        return;
+    }
+
+    if(cvv.length !== 3){
+        alert("Invalid CVV ❌");
+        return;
+    }
+
+    processPayment();
+}
+
+
+// 📱 UPI PAYMENT
+function upiPay(){
+
+    let upiId = document.getElementById("upi").value.trim();
+
+    if(upiId === ""){
+        alert("Enter UPI ID ❌");
+        return;
+    }
+
+    if(!upiId.includes("@")){
+        alert("Invalid UPI ID ❌");
+        return;
+    }
+
+    alert("Processing payment to " + upiId + " 📱");
+
+    processPayment();
+}
+
+// 🎯 COMMON PAYMENT FLOW
+function processPayment(){
+
+    document.getElementById("loader").style.display = "block";
+
+    setTimeout(()=>{
+        alert("Payment Successful 🎉\nTickets Booked Successfully");
+        window.location.href = "/confirm_booking";
+    },2000);
+}
+
+</script>
+
+</body>
+</html>
