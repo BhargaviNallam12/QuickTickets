@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Summary</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<nav><h1>QuickTickets</h1></nav>
+
+<div class="form-container">
+<h2>Booking Summary</h2>
+
+<p><b>Movie:</b> {{movie}}</p>
+<p><b>Seats:</b> {{seats}}</p>
+<p><b>Total:</b> ₹{{total}}</p>
+
+<button class="book-btn" onclick="goToPayment()">Proceed to Payment</button>
+
+</div>
+
+<script>
+function goToPayment(){
+    window.location.href = "/payment";
+}
+</script>
+
+</body>
+</html>
