@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Book</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+
+<body>
+
+<nav><h1>QuickTickets</h1></nav>
+
+<div class="hero">
+    <img class="poster" src="{{ url_for('static', filename='images/' + image) }}">
+    <h2>{{ movie }}</h2>
+</div>
+
+<!-- LEGEND -->
+<div class="legend">
+    <span>🟫 Gold ₹200</span>
+    <span>⬜ Silver ₹150</span>
+    <span>⬛ Booked</span>
+    <span>🟥 Selected</span>
+</div>
+
+<div class="screen">SCREEN</div>
+
+<!-- THEATRE -->
+<div class="theatre">
+
+{% for row in ['A','B','C','D'] %}
+    <div class="row">
+
+        <div class="row-label">{{ row }}</div>
+
+        <div class="row-seats">
+        {% for num in range(1,11) %}
+            {% set seat = row ~ num %}
+
+            {% if row in ['A','B'] %}
+                {% set price = 150 %}
+            {% else %}
+                {% set price = 200 %}
+            {% endif %}
+
+            <div class="seat {% if seat in booked_seats %}booked{% endif %}"
+                 data-seat="{{seat}}"
+                 data-price="{{price}}"
+                 onclick="{% if seat not in booked_seats %}selectSeat(this){% endif %}">
+                {{ num }}
+            </div>
+
+        {% endfor %}
+        </div>
+
+    </div>
+{% endfor %}
+
+</div>
+
+<h3 id="total">Total: ₹0</h3>
+
+<button onclick="bookSeats()" class="book-btn">Confirm Booking</button>
+
+<script>
+let total = 0;
+
+function selectSeat(el){
+    el.classList.toggle("selected");
+
+    let price = parseInt(el.dataset.price);
+
+    if(el.classList.contains("selected")) total += price;
+    else total -= price;
+
+    document.getElementById("total").innerText = "Total: ₹" + total;
+}
+
+function bookSeats(){
+    let seats = [];
+
+    document.querySelectorAll(".selected").forEach(s=>{
+        seats.push(s.dataset.seat);
+    });
+
+    // ✅ VALIDATION
+    if(seats.length === 0){
+        alert("Please select at least one seat ❗");
+        return;
+    }
+
+    fetch("/summary",{
+        method:"POST",
+        headers:{"Content-Type":"application/json"},
+        body:JSON.stringify({
+            seats:seats,
+            movie:"{{movie}}",
+            total:total
+        })
+    })
+    .then(res=>res.text())
+    .then(url=>{
+        // ✅ FIXED MESSAGE
+        alert("Seats Selected Successfully 🎟️");
+        window.location = url;
+    });
+}
+</script>
+
+</body>
+</html>
