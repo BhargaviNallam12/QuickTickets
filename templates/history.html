@@ -1,0 +1,28 @@
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head><body>
+
+<nav>
+    <h1>QuickTickets</h1>
+    <a href="/" style="color:white;">Home</a>
+</nav>
+
+<div style="text-align:center; margin-top:30px;">
+    <h2>🎟️ My Bookings</h2>
+</div>
+
+{% if bookings %}
+    {% for b in bookings %}
+        <div class="booking-card">
+            <h3>{{ b[0] }}</h3>
+            <p>Seat: {{ b[1] }}</p>
+            <a href="/download_ticket">
+            <button class="book-btn">Download Ticket 🎟️</button>
+            </a>
+        </div>
+    {% endfor %}
+{% else %}
+    <p style="text-align:center;">No bookings yet 😢</p>
+{% endif %}
+
+</body>
