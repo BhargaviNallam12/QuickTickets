@@ -3,3 +3,4 @@ gunicorn==21.2.0
 reportlab==4.0.9
 qrcode==7.4.2
 Pillow==9.5.0
+Python==3.10.13
