@@ -1,8 +1,9 @@
 from flask import Flask, render_template, request, redirect, session, send_file
 import sqlite3
 from reportlab.lib.pagesizes import letter
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Image
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Image, Table, TableStyle, Spacer
 from reportlab.lib.styles import getSampleStyleSheet
+from reportlab.lib import colors
 import qrcode
 
 app = Flask(__name__)
@@ -42,7 +43,7 @@ if cursor.fetchone()[0] == 0:
     conn.commit()
 
 
-# ✅ HOME + SEARCH (FIXED)
+# HOME
 @app.route('/', methods=['GET','POST'])
 def home():
     if 'user' not in session:
@@ -53,7 +54,6 @@ def home():
     if request.method == 'POST':
         search = request.form.get('search', '').strip()
 
-        # 🔍 CASE-INSENSITIVE SEARCH
         cursor.execute(
             "SELECT * FROM movies WHERE LOWER(name) LIKE ?",
             ('%' + search.lower() + '%',)
@@ -63,7 +63,6 @@ def home():
 
     movies = cursor.fetchall()
 
-    # ✅ GET ALL MOVIES FOR SUGGESTIONS (VERY IMPORTANT)
     cursor.execute("SELECT * FROM movies")
     all_movies = cursor.fetchall()
 
@@ -71,9 +70,10 @@ def home():
         "index.html",
         movies=movies,
         no_result=(len(movies) == 0),
-        search=search.lower(),   # ✅ important for highlight
-        all_movies=all_movies    # ✅ REQUIRED for suggestions
+        search=search.lower(),
+        all_movies=all_movies
     )
+
 
 # SIGNUP
 @app.route('/signup', methods=['GET','POST'])
@@ -153,7 +153,7 @@ def book(movie):
     return render_template('book.html', movie=movie, image=img, booked_seats=booked)
 
 
-# SUMMARY
+# SUMMARY (AJAX)
 @app.route('/summary', methods=['POST'])
 def summary():
     data = request.get_json()
@@ -171,9 +171,9 @@ def summary_page():
         return redirect('/')
 
     return render_template("summary.html",
-        movie=session.get('movie'),
-        seats=session.get('seats'),
-        total=session.get('total')
+        movie=session['movie'],
+        seats=session['seats'],
+        total=session['total']
     )
 
 
@@ -203,97 +203,48 @@ def confirm_booking():
 
     conn.commit()
 
-    # ✅ CLEAR SESSION AFTER BOOKING
-   
-
     return redirect('/history')
 
 
-# DOWNLOAD TICKET WITH QR
+# DOWNLOAD TICKET
 @app.route('/download_ticket')
 def download_ticket():
 
-    from reportlab.platypus import Table, TableStyle, Spacer
-    from reportlab.lib import colors
-
     file_path = "ticket.pdf"
-
     doc = SimpleDocTemplate(file_path, pagesize=letter)
     styles = getSampleStyleSheet()
 
+    movie = session.get('movie', '')
+    seats = ', '.join(session.get('seats', []))
+    total = session.get('total', 0)
+
     content = []
 
-    movie = session.get('movie')
-    seats = ', '.join(session.get('seats', []))
-    total = session.get('total')
-
-    # 🎬 HEADER
-    header = Table([
-        ["🎬 QuickTickets"]
-    ], colWidths=[450])
-
+    header = Table([["🎬 QuickTickets"]], colWidths=[450])
     header.setStyle(TableStyle([
         ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#f84464")),
         ('TEXTCOLOR', (0,0), (-1,-1), colors.white),
-        ('FONTSIZE', (0,0), (-1,-1), 18),
-        ('ALIGN', (0,0), (-1,-1), 'CENTER'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 10),
+        ('ALIGN', (0,0), (-1,-1), 'CENTER')
     ]))
 
     content.append(header)
-    content.append(Spacer(1, 15))
+    content.append(Spacer(1, 20))
 
-    # 🎟 DETAILS
     details = [
         ["Movie:", movie],
         ["Seats:", seats],
-        ["Total:", "{total}"],
-        ["Status:", "Confirmed"]
+        ["Total:", f"₹{total}"],   # ✅ FIXED
+        ["Status:", "Confirmed ✅"]
     ]
 
-    details_table = Table(details, colWidths=[100, 250])
-
-    details_table.setStyle(TableStyle([
-        ('FONTSIZE', (0,0), (-1,-1), 12),
-        ('TEXTCOLOR', (0,0), (0,-1), colors.black),
-        ('TEXTCOLOR', (1,0), (1,0), colors.HexColor("#f84464")),  # highlight movie
-        ('BOTTOMPADDING', (0,0), (-1,-1), 8),
-    ]))
-
-    # 📱 QR CODE
-    qr_data = f"{movie} | Seats: {seats} | ₹{total}"
-    qr = qrcode.QRCode()
-    qr.add_data(qr_data)
-    qr.make()
-
-    img = qr.make_image(fill_color="black", back_color="white")
-    img.save("qr.png")
-
-    qr_img = Image("qr.png", width=120, height=120)
-
-    # 🎯 COMBINE DETAILS + QR
-    main_table = Table([
-        [details_table, qr_img]
-    ], colWidths=[300, 150])
-
-    main_table.setStyle(TableStyle([
-        ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
-        ('BOX', (0,0), (-1,-1), 1, colors.grey),
-        ('INNERGRID', (0,0), (-1,-1), 0.5, colors.lightgrey),
-        ('LEFTPADDING', (0,0), (-1,-1), 15),
-        ('RIGHTPADDING', (0,0), (-1,-1), 15),
-        ('TOPPADDING', (0,0), (-1,-1), 15),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 15),
-    ]))
-
-    content.append(main_table)
+    table = Table(details)
+    content.append(table)
     content.append(Spacer(1, 20))
 
-    # 🍿 FOOTER
-    content.append(Paragraph(
-        "<i>🎉 Enjoy your movie! Show this ticket at entry 🍿</i>",
-        styles['Normal']
-    ))
+    qr = qrcode.make(f"{movie} | {seats} | ₹{total}")
+    qr.save("qr.png")
+
+    content.append(Image("qr.png", width=120, height=120))
 
     doc.build(content)
 
