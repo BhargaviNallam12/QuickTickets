@@ -21,9 +21,12 @@
 
 </div>
 
+
+
 <script>
 function goToPayment(){
-    window.location.href = "/payment";
+    let total = "{{total}}";
+    window.location.href = "/payment?total=" + total;
 }
 </script>
 
