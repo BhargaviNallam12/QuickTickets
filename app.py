@@ -180,9 +180,12 @@ def summary_page():
 # PAYMENT
 @app.route('/payment')
 def payment():
-    if 'total' not in session:
+    total = request.args.get('total')
+
+    if not total:
         return redirect('/')
-    return render_template('payment.html', total=session['total'])
+
+    return render_template('payment.html', total=total)
 
 
 # CONFIRM BOOKING
