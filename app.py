@@ -262,8 +262,12 @@ def download_ticket():
 
     # 📱 QR CODE
     qr_data = f"{movie} | Seats: {seats} | ₹{total}"
-    qr = qrcode.make(qr_data)
-    qr.save("qr.png")
+    qr = qrcode.QRCode()
+    qr.add_data(qr_data)
+    qr.make()
+
+    img = qr.make_image(fill_color="black", back_color="white")
+    img.save("qr.png")
 
     qr_img = Image("qr.png", width=120, height=120)
 
